@@ -1,180 +1,158 @@
+-- this bit of code modifies the default chests and furnaces to be compatible
+-- with pipeworks.
 
-default.furnace_inactive_formspec =
-	"size[8,9]"..
-	"image[2,2;1,1;default_furnace_fire_bg.png]"..
-	"list[current_name;fuel;2,3;1,1;]"..
-	"list[current_name;src;2,1;1,1;]"..
-	"list[current_name;dst;5,1;2,2;]"..
-	"list[current_player;main;0,5;8,4;]"
+function pipeworks.clone_node(name)
+	local node2 = {}
+	local node = minetest.registered_nodes[name]
+	for k, v in pairs(node) do
+		node2[k] = v
+	end
+	return node2
+end
 
-minetest.register_node(":default:furnace", {
-	description = "Furnace",
-	tiles = {"default_furnace_top.png", "default_furnace_bottom.png", "default_furnace_side.png",
-		"default_furnace_side.png", "default_furnace_side.png", "default_furnace_front.png"},
-	paramtype2 = "facedir",
-	groups = {cracky=2,tubedevice=1,tubedevice_receiver=1},
-	tube={insert_object=function(pos,node,stack,direction)
-			local meta=minetest.env:get_meta(pos)
-			local inv=meta:get_inventory()
-			if direction.y==1 then
+local furnace = pipeworks.clone_node("default:furnace")
+	furnace.tiles[1] = "default_furnace_top.png^pipeworks_tube_connection_stony.png"
+	furnace.tiles[2] = "default_furnace_bottom.png^pipeworks_tube_connection_stony.png"
+	furnace.tiles[3] = "default_furnace_side.png^pipeworks_tube_connection_stony.png"
+	furnace.tiles[4] = "default_furnace_side.png^pipeworks_tube_connection_stony.png"
+	furnace.tiles[5] = "default_furnace_side.png^pipeworks_tube_connection_stony.png"
+	-- note we don't redefine entry 6 ( front)
+	furnace.groups.tubedevice = 1
+	furnace.groups.tubedevice_receiver = 1
+	furnace.tube = {
+		insert_object = function(pos, node, stack, direction)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			if direction.y == 1 then
 				return inv:add_item("fuel",stack)
 			else
 				return inv:add_item("src",stack)
 			end
 		end,
-		can_insert=function(pos,node,stack,direction)
-			local meta=minetest.env:get_meta(pos)
-			local inv=meta:get_inventory()
-			if direction.y==1 then
-				return inv:room_for_item("fuel",stack)
-			elseif direction.y==-1 then
-				return inv:room_for_item("src",stack)
+		can_insert = function(pos,node,stack,direction)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			if direction.y == 1 then
+				return inv:room_for_item("fuel", stack)
 			else
-				return 0
+				return inv:room_for_item("src", stack)
 			end
 		end,
-		input_inventory="dst"},
-	legacy_facedir_simple = true,
-	sounds = default.node_sound_stone_defaults(),
-	on_construct = function(pos)
-		local meta = minetest.env:get_meta(pos)
-		meta:set_string("formspec", default.furnace_inactive_formspec)
-		meta:set_string("infotext", "Furnace")
-		local inv = meta:get_inventory()
-		inv:set_size("fuel", 1)
-		inv:set_size("src", 1)
-		inv:set_size("dst", 4)
-	end,
-	can_dig = function(pos,player)
-		local meta = minetest.env:get_meta(pos);
-		local inv = meta:get_inventory()
-		if not inv:is_empty("fuel") then
-			return false
-		elseif not inv:is_empty("dst") then
-			return false
-		elseif not inv:is_empty("src") then
-			return false
-		end
-		return true
-	end,
-	after_place_node = function(pos)
-		tube_scanforobjects(pos)
-	end,
-	after_dig_node = function(pos)
-		tube_scanforobjects(pos)
+		input_inventory = "dst",
+		connect_sides = {left=1, right=1, back=1, front=1, bottom=1, top=1}
+	}
+	furnace.after_place_node = function(pos)
+		pipeworks.scan_for_tube_objects(pos)
 	end
-})
+	furnace.after_dig_node = function(pos)
+		pipeworks.scan_for_tube_objects(pos)
+	end
 
-minetest.register_node(":default:furnace_active", {
-	description = "Furnace",
-	tiles = {"default_furnace_top.png", "default_furnace_bottom.png", "default_furnace_side.png",
-		"default_furnace_side.png", "default_furnace_side.png", "default_furnace_front_active.png"},
-	paramtype2 = "facedir",
-	light_source = 8,
-	drop = "default:furnace",
-	groups = {cracky=2, not_in_creative_inventory=1,tubedevice=1,tubedevice_receiver=1},
-	tube={insert_object=function(pos,node,stack,direction)
-			local meta=minetest.env:get_meta(pos)
-			local inv=meta:get_inventory()
-			if direction.y==1 then
-				return inv:add_item("fuel",stack)
-			else
-				return inv:add_item("src",stack)
-			end
-		end,
-		can_insert=function(pos,node,stack,direction)
-			local meta=minetest.env:get_meta(pos)
-			local inv=meta:get_inventory()
-			if direction.y==1 then
-				return inv:room_for_item("fuel",stack)
-			elseif direction.y==-1 then
-				return inv:room_for_item("src",stack)
-			else
-				return 0
-			end
-		end,
-		input_inventory="dst"},
-	legacy_facedir_simple = true,
-	sounds = default.node_sound_stone_defaults(),
-	on_construct = function(pos)
-		local meta = minetest.env:get_meta(pos)
-		meta:set_string("formspec", default.furnace_inactive_formspec)
-		meta:set_string("infotext", "Furnace");
-		local inv = meta:get_inventory()
-		inv:set_size("fuel", 1)
-		inv:set_size("src", 1)
-		inv:set_size("dst", 4)
-	end,
-	can_dig = function(pos,player)
-		local meta = minetest.env:get_meta(pos);
-		local inv = meta:get_inventory()
-		if not inv:is_empty("fuel") then
-			return false
-		elseif not inv:is_empty("dst") then
-			return false
-		elseif not inv:is_empty("src") then
-			return false
-		end
-		return true
-	end,
-	after_place_node = function(pos)
-		tube_scanforobjects(pos)
-	end,
-	after_dig_node = function(pos)
-		tube_scanforobjects(pos)
-	end
-})
+minetest.register_node(":default:furnace", furnace)
 
-minetest.register_node(":default:chest", {
-	description = "Chest",
-	tiles = {"default_chest_top.png", "default_chest_top.png", "default_chest_side.png",
-		"default_chest_side.png", "default_chest_side.png", "default_chest_front.png"},
-	paramtype2 = "facedir",
-	groups = {snappy=2,choppy=2,oddly_breakable_by_hand=2,tubedevice=1,tubedevice_receiver=1},
-	tube={insert_object=function(pos,node,stack,direction)
-			local meta=minetest.env:get_meta(pos)
-			local inv=meta:get_inventory()
-			return inv:add_item("main",stack)
+local furnace_active = pipeworks.clone_node("default:furnace_active")
+	furnace_active.tiles[1] = "default_furnace_top.png^pipeworks_tube_connection_stony.png"
+	furnace_active.tiles[2] = "default_furnace_bottom.png^pipeworks_tube_connection_stony.png"
+	furnace_active.tiles[3] = "default_furnace_side.png^pipeworks_tube_connection_stony.png"
+	furnace_active.tiles[4] = "default_furnace_side.png^pipeworks_tube_connection_stony.png"
+	furnace_active.tiles[5] = "default_furnace_side.png^pipeworks_tube_connection_stony.png"
+	-- note we don't redefine entry 6 (front)
+	furnace_active.groups.tubedevice = 1
+	furnace_active.groups.tubedevice_receiver = 1
+	furnace_active.tube = {
+		insert_object = function(pos,node,stack,direction)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			if direction.y == 1 then
+				return inv:add_item("fuel", stack)
+			else
+				return inv:add_item("src", stack)
+			end
 		end,
-		can_insert=function(pos,node,stack,direction)
-			local meta=minetest.env:get_meta(pos)
-			local inv=meta:get_inventory()
-			return inv:room_for_item("main",stack)
+		can_insert = function(pos, node, stack, direction)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			if direction.y == 1 then
+				return inv:room_for_item("fuel", stack)
+			else
+				return inv:room_for_item("src", stack)
+			end
 		end,
-		input_inventory="main"},
-	legacy_facedir_simple = true,
-	sounds = default.node_sound_wood_defaults(),
-	on_construct = function(pos)
-		local meta = minetest.env:get_meta(pos)
-		meta:set_string("formspec",
-				"size[8,9]"..
-				"list[current_name;main;0,0;8,4;]"..
-				"list[current_player;main;0,5;8,4;]")
-		meta:set_string("infotext", "Chest")
-		local inv = meta:get_inventory()
-		inv:set_size("main", 8*4)
-	end,
-	can_dig = function(pos,player)
-		local meta = minetest.env:get_meta(pos);
-		local inv = meta:get_inventory()
-		return inv:is_empty("main")
-	end,
-	on_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
-		minetest.log("action", player:get_player_name()..
-				" moves stuff in chest at "..minetest.pos_to_string(pos))
-	end,
-    on_metadata_inventory_put = function(pos, listname, index, stack, player)
-		minetest.log("action", player:get_player_name()..
-				" moves stuff to chest at "..minetest.pos_to_string(pos))
-	end,
-    on_metadata_inventory_take = function(pos, listname, index, stack, player)
-		minetest.log("action", player:get_player_name()..
-				" takes stuff from chest at "..minetest.pos_to_string(pos))
-	end,
-	after_place_node = function(pos)
-		tube_scanforobjects(pos)
-	end,
-	after_dig_node = function(pos)
-		tube_scanforobjects(pos)
+		input_inventory = "dst",
+		connect_sides = {left=1, right=1, back=1, front=1, bottom=1, top=1}
+	}
+	furnace_active.after_place_node= function(pos)
+		pipeworks.scan_for_tube_objects(pos)
 	end
-})
+	furnace_active.after_dig_node = function(pos)
+		pipeworks.scan_for_tube_objects(pos)
+	end
+
+minetest.register_node(":default:furnace_active", furnace_active)
+
+
+local chest = pipeworks.clone_node("default:chest")
+	chest.tiles[1] = "default_chest_top.png^pipeworks_tube_connection_wooden.png"
+	chest.tiles[2] = "default_chest_top.png^pipeworks_tube_connection_wooden.png"
+	chest.tiles[3] = "default_chest_side.png^pipeworks_tube_connection_wooden.png"
+	chest.tiles[4] = "default_chest_side.png^pipeworks_tube_connection_wooden.png"
+	chest.tiles[5] = "default_chest_side.png^pipeworks_tube_connection_wooden.png"
+	-- note we don't redefine entry 6 (front).
+	chest.groups.tubedevice = 1
+	chest.groups.tubedevice_receiver = 1
+	chest.tube = {
+		insert_object = function(pos, node, stack, direction)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			return inv:add_item("main", stack)
+		end,
+		can_insert = function(pos, node, stack, direction)
+			local meta = minetest.get_meta(pos)
+			local inv = meta:get_inventory()
+			return inv:room_for_item("main", stack)
+		end,
+		input_inventory = "main",
+		connect_sides = {left=1, right=1, back=1, front=1, bottom=1, top=1}
+	}
+	chest.after_place_node = function(pos)
+		pipeworks.scan_for_tube_objects(pos)
+	end
+	chest.after_dig_node = function(pos)
+		pipeworks.scan_for_tube_objects(pos)
+	end
+
+minetest.register_node(":default:chest", chest)
+
+
+local chest_locked = pipeworks.clone_node("default:chest_locked")
+	chest_locked.tiles[1] = "default_chest_top.png^pipeworks_tube_connection_wooden.png"
+	chest_locked.tiles[2] = "default_chest_top.png^pipeworks_tube_connection_wooden.png"
+	chest_locked.tiles[3] = "default_chest_side.png^pipeworks_tube_connection_wooden.png"
+	chest_locked.tiles[4] = "default_chest_side.png^pipeworks_tube_connection_wooden.png"
+	chest_locked.tiles[5] = "default_chest_side.png^pipeworks_tube_connection_wooden.png"
+	-- note we don't redefine entry 6 (front).
+	chest_locked.groups.tubedevice = 1
+	chest_locked.groups.tubedevice_receiver = 1
+	chest_locked.tube = {
+		insert_object = function(pos, node, stack, direction)
+			local meta = minetest.env:get_meta(pos)
+			local inv = meta:get_inventory()
+			return inv:add_item("main", stack)
+		end,
+		can_insert = function(pos, node, stack, direction)
+			local meta = minetest.env:get_meta(pos)
+			local inv = meta:get_inventory()
+			return inv:room_for_item("main", stack)
+		end,
+		connect_sides = {left=1, right=1, back=1, front=1, bottom=1, top=1}
+	}
+	local old_after_place = minetest.registered_nodes["default:chest_locked"].after_place_node
+	chest_locked.after_place_node = function(pos, placer)
+		pipeworks.scan_for_tube_objects(pos)
+		old_after_place(pos, placer)
+	end
+	chest_locked.after_dig_node = function(pos)
+		pipeworks.scan_for_tube_objects(pos)
+	end
+
+minetest.register_node(":default:chest_locked", chest_locked)

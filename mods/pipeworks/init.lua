@@ -1,127 +1,48 @@
--- Pipeworks mod by Vanessa Ezekowitz - 2012-08-05
+-- Pipeworks mod by Vanessa Ezekowitz - 2013-07-13
 --
--- Entirely my own code.  This mod supplies various shapes of pipes
--- and devices that they can connect to such as pumps, valves, etc.
--- All pipes autoconnect as you lay them out, and devices will auto-
--- connect to them.
+-- This mod supplies various steel pipes and plastic pneumatic tubes
+-- and devices that they can connect to.
 --
 -- License: WTFPL
 --
 
--- Un-comment the following dofile line to re-enable the old pipe nodes.
--- dofile(minetest.get_modpath("pipeworks").."/oldpipes.lua")
---
+pipeworks = {}
 
-minetest.register_alias("pipeworks:pipe", "pipeworks:pipe_110000_empty")
 local DEBUG = false
 
-pipeworks_liquid_texture = "default_water.png"
+pipeworks.worldpath = minetest.get_worldpath()
+pipeworks.modpath = minetest.get_modpath("pipeworks")
 
-pipe_leftstub = {
-	{ -32/64, -2/64, -6/64,   1/64, 2/64, 6/64 },	-- pipe segment against -X face
-	{ -32/64, -4/64, -5/64,   1/64, 4/64, 5/64 },
-	{ -32/64, -5/64, -4/64,   1/64, 5/64, 4/64 },
-	{ -32/64, -6/64, -2/64,   1/64, 6/64, 2/64 },
+dofile(pipeworks.modpath.."/default_settings.txt")
 
-	{ -32/64, -3/64, -8/64, -30/64, 3/64, 8/64 },	-- (the flange for it)
-	{ -32/64, -5/64, -7/64, -30/64, 5/64, 7/64 },
-	{ -32/64, -6/64, -6/64, -30/64, 6/64, 6/64 },
-	{ -32/64, -7/64, -5/64, -30/64, 7/64, 5/64 },
-	{ -32/64, -8/64, -3/64, -30/64, 8/64, 3/64 }
-}
-
-pipe_rightstub = {
-	{ -1/64, -2/64, -6/64,  32/64, 2/64, 6/64 },	-- pipe segment against +X face
-	{ -1/64, -4/64, -5/64,  32/64, 4/64, 5/64 },
-	{ -1/64, -5/64, -4/64,  32/64, 5/64, 4/64 },
-	{ -1/64, -6/64, -2/64,  32/64, 6/64, 2/64 },
-
-	{ 30/64, -3/64, -8/64, 32/64, 3/64, 8/64 },	-- (the flange for it)
-	{ 30/64, -5/64, -7/64, 32/64, 5/64, 7/64 },
-	{ 30/64, -6/64, -6/64, 32/64, 6/64, 6/64 },
-	{ 30/64, -7/64, -5/64, 32/64, 7/64, 5/64 },
-	{ 30/64, -8/64, -3/64, 32/64, 8/64, 3/64 }
-}
-
-pipe_bottomstub = {
-	{ -2/64, -32/64, -6/64,   2/64, 1/64, 6/64 },	-- pipe segment against -Y face
-	{ -4/64, -32/64, -5/64,   4/64, 1/64, 5/64 },
-	{ -5/64, -32/64, -4/64,   5/64, 1/64, 4/64 },
-	{ -6/64, -32/64, -2/64,   6/64, 1/64, 2/64 },
-
-	{ -3/64, -32/64, -8/64, 3/64, -30/64, 8/64 },	-- (the flange for it)
-	{ -5/64, -32/64, -7/64, 5/64, -30/64, 7/64 },
-	{ -6/64, -32/64, -6/64, 6/64, -30/64, 6/64 },
-	{ -7/64, -32/64, -5/64, 7/64, -30/64, 5/64 },
-	{ -8/64, -32/64, -3/64, 8/64, -30/64, 3/64 }
-}
-
-
-pipe_topstub = {
-	{ -2/64, -1/64, -6/64,   2/64, 32/64, 6/64 },	-- pipe segment against +Y face
-	{ -4/64, -1/64, -5/64,   4/64, 32/64, 5/64 },
-	{ -5/64, -1/64, -4/64,   5/64, 32/64, 4/64 },
-	{ -6/64, -1/64, -2/64,   6/64, 32/64, 2/64 },
-
-	{ -3/64, 30/64, -8/64, 3/64, 32/64, 8/64 },	-- (the flange for it)
-	{ -5/64, 30/64, -7/64, 5/64, 32/64, 7/64 },
-	{ -6/64, 30/64, -6/64, 6/64, 32/64, 6/64 },
-	{ -7/64, 30/64, -5/64, 7/64, 32/64, 5/64 },
-	{ -8/64, 30/64, -3/64, 8/64, 32/64, 3/64 }
-}
-
-pipe_frontstub = {
-	{ -6/64, -2/64, -32/64,   6/64, 2/64, 1/64 },	-- pipe segment against -Z face
-	{ -5/64, -4/64, -32/64,   5/64, 4/64, 1/64 },
-	{ -4/64, -5/64, -32/64,   4/64, 5/64, 1/64 },
-	{ -2/64, -6/64, -32/64,   2/64, 6/64, 1/64 },
-
-	{ -8/64, -3/64, -32/64, 8/64, 3/64, -30/64 },	-- (the flange for it)
-	{ -7/64, -5/64, -32/64, 7/64, 5/64, -30/64 },
-	{ -6/64, -6/64, -32/64, 6/64, 6/64, -30/64 },
-	{ -5/64, -7/64, -32/64, 5/64, 7/64, -30/64 },
-	{ -3/64, -8/64, -32/64, 3/64, 8/64, -30/64 }
-}
-
-pipe_backstub = {
-	{ -6/64, -2/64, -1/64,   6/64, 2/64, 32/64 },	-- pipe segment against -Z face
-	{ -5/64, -4/64, -1/64,   5/64, 4/64, 32/64 },
-	{ -4/64, -5/64, -1/64,   4/64, 5/64, 32/64 },
-	{ -2/64, -6/64, -1/64,   2/64, 6/64, 32/64 },
-
-	{ -8/64, -3/64, 30/64, 8/64, 3/64, 32/64 },	-- (the flange for it)
-	{ -7/64, -5/64, 30/64, 7/64, 5/64, 32/64 },
-	{ -6/64, -6/64, 30/64, 6/64, 6/64, 32/64 },
-	{ -5/64, -7/64, 30/64, 5/64, 7/64, 32/64 },
-	{ -3/64, -8/64, 30/64, 3/64, 8/64, 32/64 }
-} 
-
-pipe_selectboxes = {
-	{ -32/64,  -8/64,  -8/64,  8/64,  8/64,  8/64 },
-	{ -8/64 ,  -8/64,  -8/64, 32/64,  8/64,  8/64 },
-	{ -8/64 , -32/64,  -8/64,  8/64,  8/64,  8/64 },
-	{ -8/64 ,  -8/64,  -8/64,  8/64, 32/64,  8/64 },
-	{ -8/64 ,  -8/64, -32/64,  8/64,  8/64,  8/64 },
-	{ -8/64 ,  -8/64,  -8/64,  8/64,  8/64, 32/64 }
-}
-
-pipe_bendsphere = {	
-	{ -4/64, -4/64, -4/64, 4/64, 4/64, 4/64 },
-	{ -5/64, -3/64, -3/64, 5/64, 3/64, 3/64 },
-	{ -3/64, -5/64, -3/64, 3/64, 5/64, 3/64 },
-	{ -3/64, -3/64, -5/64, 3/64, 3/64, 5/64 }
-}
-
---  Functions
-
-dbg = function(s)
-	if DEBUG then
-		print('[PIPEWORKS] ' .. s)
-	end
+-- Read the external config file if it exists.
+if io.open(pipeworks.worldpath.."/pipeworks_settings.txt","r") then
+	dofile(pipeworks.worldpath.."/pipeworks_settings.txt")
+	io.close()
 end
 
-function pipes_fix_image_names(table, replacement)
-	outtable={}
+-- Random variables
+
+pipeworks.expect_infinite_stacks = true
+if minetest.get_modpath("unified_inventory") or not minetest.setting_getbool("creative_mode") then
+	pipeworks.expect_infinite_stacks = false
+end
+
+pipeworks.meseadjlist={{x=0,y=0,z=1},{x=0,y=0,z=-1},{x=0,y=1,z=0},{x=0,y=-1,z=0},{x=1,y=0,z=0},{x=-1,y=0,z=0}}
+
+pipeworks.rules_all = {{x=0, y=0, z=1},{x=0, y=0, z=-1},{x=1, y=0, z=0},{x=-1, y=0, z=0},
+		{x=0, y=1, z=1},{x=0, y=1, z=-1},{x=1, y=1, z=0},{x=-1, y=1, z=0},
+		{x=0, y=-1, z=1},{x=0, y=-1, z=-1},{x=1, y=-1, z=0},{x=-1, y=-1, z=0},
+		{x=0, y=1, z=0}, {x=0, y=-1, z=0}}
+
+pipeworks.mesecons_rules={{x=0,y=0,z=1},{x=0,y=0,z=-1},{x=1,y=0,z=0},{x=-1,y=0,z=0},{x=0,y=1,z=0},{x=0,y=-1,z=0}}
+
+pipeworks.liquid_texture = "default_water.png"
+
+-- Helper functions
+
+function pipeworks.fix_image_names(table, replacement)
+	local outtable={}
 	for i in ipairs(table) do
 		outtable[i]=string.gsub(table[i], "_XXXXX", replacement)
 	end
@@ -129,206 +50,79 @@ function pipes_fix_image_names(table, replacement)
 	return outtable
 end
 
-function pipe_addbox(t, b)
+function pipeworks.add_node_box(t, b)
 	for i in ipairs(b)
 		do table.insert(t, b[i])
 	end
 end
 
--- now define the nodes!
-
-pipes_empty_nodenames = {}
-pipes_full_nodenames = {}
-
-for xm = 0, 1 do
-for xp = 0, 1 do
-for ym = 0, 1 do
-for yp = 0, 1 do
-for zm = 0, 1 do
-for zp = 0, 1 do
-	local outboxes = {}
-	local outsel = {}
-	local outimgs = {}
-
-	if yp==1 then
-		pipe_addbox(outboxes, pipe_topstub)
-		table.insert(outsel, pipe_selectboxes[4])
-		table.insert(outimgs, "pipeworks_pipe_end.png")
-	else
-		table.insert(outimgs, "pipeworks_plain.png")
-	end
-	if ym==1 then
-		pipe_addbox(outboxes, pipe_bottomstub)
-		table.insert(outsel, pipe_selectboxes[3])
-		table.insert(outimgs, "pipeworks_pipe_end.png")
-	else
-		table.insert(outimgs, "pipeworks_plain.png")
-	end
-	if xp==1 then
-		pipe_addbox(outboxes, pipe_rightstub)
-		table.insert(outsel, pipe_selectboxes[2])
-		table.insert(outimgs, "pipeworks_pipe_end.png")
-	else
-		table.insert(outimgs, "pipeworks_plain.png")
-	end
-	if xm==1 then
-		pipe_addbox(outboxes, pipe_leftstub)
-		table.insert(outsel, pipe_selectboxes[1])
-		table.insert(outimgs, "pipeworks_pipe_end.png")
-	else
-		table.insert(outimgs, "pipeworks_plain.png")
-	end
-	if zp==1 then
-		pipe_addbox(outboxes, pipe_backstub)
-		table.insert(outsel, pipe_selectboxes[6])
-		table.insert(outimgs, "pipeworks_pipe_end.png")
-	else
-		table.insert(outimgs, "pipeworks_plain.png")
-	end
-	if zm==1 then
-		pipe_addbox(outboxes, pipe_frontstub)
-		table.insert(outsel, pipe_selectboxes[5])
-		table.insert(outimgs, "pipeworks_pipe_end.png")
-	else
-		table.insert(outimgs, "pipeworks_plain.png")
-	end
-
-	local jx = xp+xm
-	local jy = yp+ym
-	local jz = zp+zm
-
-	if (jx+jy+jz) == 1 then
-		if xm == 1 then 
-			table.remove(outimgs, 3)
-			table.insert(outimgs, 3, "^pipeworks_plain.png")
+function pipeworks.node_is_owned(pos, placer)
+	local ownername = false
+	if type(IsPlayerNodeOwner) == "function" then					-- node_ownership mod
+		if HasOwner(pos, placer) then						-- returns true if the node is owned
+			if not IsPlayerNodeOwner(pos, placer:get_player_name()) then
+				if type(getLastOwner) == "function" then		-- ...is an old version
+					ownername = getLastOwner(pos)
+				elseif type(GetNodeOwnerName) == "function" then	-- ...is a recent version
+					ownername = GetNodeOwnerName(pos)
+				else
+					ownername = S("someone")
+				end
+			end
 		end
-		if xp == 1 then 
-			table.remove(outimgs, 4)
-			table.insert(outimgs, 4, "^pipeworks_plain.png")
+
+	elseif type(isprotect)=="function" then 					-- glomie's protection mod
+		if not isprotect(5, pos, placer) then
+			ownername = S("someone")
 		end
-		if ym == 1 then 
-			table.remove(outimgs, 1)
-			table.insert(outimgs, 1, "^pipeworks_plain.png")
-		end
-		if xp == 1 then 
-			table.remove(outimgs, 2)
-			table.insert(outimgs, 2, "^pipeworks_plain.png")
-		end
-		if zm == 1 then 
-			table.remove(outimgs, 5)
-			table.insert(outimgs, 5, "^pipeworks_plain.png")
-		end
-		if zp == 1 then 
-			table.remove(outimgs, 6)
-			table.insert(outimgs, 6, "^pipeworks_plain.png")
+	elseif type(protector)=="table" and type(protector.can_dig)=="function" then 	-- Zeg9's protection mod
+		if not protector.can_dig(5, pos, placer) then
+			ownername = S("someone")
 		end
 	end
 
-	if jx+jy+jz >= 2 then
-		pipe_addbox(outboxes, pipe_bendsphere)
-	end
-
-	if (jx==2 and jy~=2 and jz~=2) then
-		table.remove(outimgs, 5)
-		table.remove(outimgs, 5)
-		table.insert(outimgs, 5, pipeworks_liquid_texture.."^pipeworks_windowed_XXXXX.png")
-		table.insert(outimgs, 5, pipeworks_liquid_texture.."^pipeworks_windowed_XXXXX.png")
-	end
-
-	if (jx~=2 and jy~=2 and jz==2) or (jx~=2 and jy==2 and jz~=2) then
-		table.remove(outimgs, 3)
-		table.remove(outimgs, 3)
-		table.insert(outimgs, 3, pipeworks_liquid_texture.."^pipeworks_windowed_XXXXX.png")
-		table.insert(outimgs, 3, pipeworks_liquid_texture.."^pipeworks_windowed_XXXXX.png")
-	end
-
-	local pname = xm..xp..ym..yp..zm..zp
-	local pgroups = ""
-
-	if pname ~= "110000" then
-		pgroups = {snappy=3, pipe=1, not_in_creative_inventory=1}
-		pipedesc = "Pipe segment (empty, "..pname..")... You hacker, you."
+	if ownername ~= false then
+		minetest.chat_send_player( placer:get_player_name(), S("Sorry, %s owns that spot."):format(ownername) )
+		return true
 	else
-		pgroups = {snappy=3, pipe=1}
-		pipedesc = "Pipe segment"
+		return false
 	end
-
-	minetest.register_node("pipeworks:pipe_"..pname.."_empty", {
-		description = pipedesc,
-		drawtype = "nodebox",
-		tiles = pipes_fix_image_names(outimgs, "_empty"),
-		paramtype = "light",
-		selection_box = {
-	             	type = "fixed",
-			fixed = outsel
-		},
-		node_box = {
-			type = "fixed",
-			fixed = outboxes
-		},
-		groups = pgroups,
-		sounds = default.node_sound_wood_defaults(),
-		walkable = true,
-		drop = "pipeworks:pipe_110000_empty",
-		pipelike=1,
-		on_construct = function(pos)
-			local meta = minetest.env:get_meta(pos)
-			meta:set_int("pipelike",1)
-		end,
-		after_place_node = function(pos)
-			pipe_scanforobjects(pos)
-		end,
-		after_dig_node = function(pos)
-			pipe_scanforobjects(pos)
-		end,
-	})
-
-	minetest.register_node("pipeworks:pipe_"..pname.."_loaded", {
-		description = "Pipe segment (loaded, "..pname..")... You hacker, you.",
-		drawtype = "nodebox",
-		tiles = pipes_fix_image_names(outimgs, "_loaded"),
-		paramtype = "light",
-		selection_box = {
-	             	type = "fixed",
-			fixed = outsel
-		},
-		node_box = {
-			type = "fixed",
-			fixed = outboxes
-		},
-		groups = {snappy=3, pipe=1, not_in_creative_inventory=1},
-		sounds = default.node_sound_wood_defaults(),
-		walkable = true,
-		drop = "pipeworks:pipe_110000_empty",
-		pipelike=1,
-		on_construct = function(pos)
-			local meta = minetest.env:get_meta(pos)
-			meta:set_int("pipelike",1)
-		end,
-		after_place_node = function(pos)
-			pipe_scanforobjects(pos)
-		end,
-		after_dig_node = function(pos)
-			pipe_scanforobjects(pos)
-		end
-	})
-	table.insert(pipes_empty_nodenames,"pipeworks:pipe_"..pname.."_empty") -- for the abms
-	table.insert(pipes_full_nodenames,"pipeworks:pipe_"..pname.."_loaded") -- for bacon
-end
-end
-end
-end
-end
 end
 
-dofile(minetest.get_modpath("pipeworks").."/tubes.lua")
-dofile(minetest.get_modpath("pipeworks").."/devices.lua")
-dofile(minetest.get_modpath("pipeworks").."/autoplace.lua")
-dofile(minetest.get_modpath("pipeworks").."/crafts.lua")
-dofile(minetest.get_modpath("pipeworks").."/flowing_logic.lua")
-dofile(minetest.get_modpath("pipeworks").."/compat.lua")
-dofile(minetest.get_modpath("pipeworks").."/item_transport.lua")
-dofile(minetest.get_modpath("pipeworks").."/autocrafter.lua")
-dofile(minetest.get_modpath("pipeworks").."/deployer.lua")
-dofile(minetest.get_modpath("pipeworks").."/node_breaker.lua")
+function pipeworks.replace_name(tbl,tr,name)
+	local ntbl={}
+	for key,i in pairs(tbl) do
+		if type(i)=="string" then
+			ntbl[key]=string.gsub(i,tr,name)
+		elseif type(i)=="table" then
+			ntbl[key]=pipeworks.replace_name(i,tr,name)
+		else
+			ntbl[key]=i
+		end
+	end
+	return ntbl
+end
+
+-------------------------------------------
+-- Load the various other parts of the mod
+
+dofile(pipeworks.modpath.."/models.lua")
+dofile(pipeworks.modpath.."/autoplace_pipes.lua")
+dofile(pipeworks.modpath.."/autoplace_tubes.lua")
+dofile(pipeworks.modpath.."/item_transport.lua")
+dofile(pipeworks.modpath.."/flowing_logic.lua")
+dofile(pipeworks.modpath.."/crafts.lua")
+dofile(pipeworks.modpath.."/tubes.lua")
+
+if pipeworks.enable_pipes then dofile(pipeworks.modpath.."/pipes.lua") end
+if pipeworks.enable_teleport_tube then dofile(pipeworks.modpath.."/teleport_tube.lua") end
+if pipeworks.enable_pipe_devices then dofile(pipeworks.modpath.."/devices.lua") end
+if pipeworks.enable_redefines then dofile(pipeworks.modpath.."/compat.lua") end
+if pipeworks.enable_autocrafter then dofile(pipeworks.modpath.."/autocrafter.lua") end
+if pipeworks.enable_deployer then dofile(pipeworks.modpath.."/deployer.lua") end
+if pipeworks.enable_node_breaker then dofile(pipeworks.modpath.."/node_breaker.lua") end
+
+minetest.register_alias("pipeworks:pipe", "pipeworks:pipe_110000_empty")
+
 print("Pipeworks loaded!")
+
