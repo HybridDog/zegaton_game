@@ -1,67 +1,97 @@
-HYDRO_GROW_INTERVAL = 100
-PLANTS = {
-	tomato = {name='tomato',growtype='growtall'},
-	peas = {name='peas',growtype='growtall'},
-	habanero = {name='habanero',growtype='growtall'},
-	grapes = {name='grapes',growtype='permaculture'},
-	coffee = {name='coffee',growtype='permaculture'},            
-	roses = {name='roses',growtype='growtall',give_on_harvest='hydro:rosebush'}                          
+local HYDRO_GROW_INTERVAL = 100
+local PLANTS = {
+	tomato = {name='tomato', description="Tomato", growtype='growtall'},
+	peas = {name='peas', description="Peas", growtype='growtall'},
+	habanero = {name='habanero', description="Habanero", growtype='growtall'},
+	grapes = {name='grapes', description="Grapes", growtype='permaculture'},
+	coffee = {name='coffee', description="Coffee", growtype='permaculture'},
+	roses = {name='roses', description="Roses", growtype='growtall',give_on_harvest='hydro:rosebush'}
 }
 
-PLANTLIKE = function(nodeid, nodename,type,option)
-	if option == nil then option = false end
+minetest.register_node("hydro:wine", {
+	description = 'Wine Bottle',
+	drawtype = "plantlike",
+	tile_images = {"hydro_wine.png"},
+	inventory_image = "hydro_wine.png",
+	wield_image = "hydro_wine.png",
+	use_texture_alpha = true,
+	paramtype = "light",
+	groups = {snappy=2,choppy=2,oddly_breakable_by_hand=2,flammable=3},
+	sounds = default.node_sound_wood_defaults(),
+	walkable = false,
+	on_use = minetest.item_eat(1)
+})
 
-	local params ={ description = nodename, drawtype = "plantlike", tile_images = {"hydro_"..nodeid..'.png'}, 
-	inventory_image = "hydro_"..nodeid..'.png',	wield_image = "hydro_"..nodeid..'.png', paramtype = "light",	}
-		
-	if type == 'veg' then
-		params.groups = {snappy=2,dig_immediate=3,flammable=2}
-		params.sounds = default.node_sound_leaves_defaults()
-		if option == false then params.walkable = false end
-	elseif type == 'met' then			-- metallic
-		params.groups = {cracky=3}
-		params.sounds = default.node_sound_stone_defaults()
-	elseif type == 'cri' then			-- craft items
-		params.groups = {snappy=2,choppy=2,oddly_breakable_by_hand=2,flammable=3}
-		params.sounds = default.node_sound_wood_defaults()
-		if option == false then params.walkable = false end
-	elseif type == 'eat' then			-- edible
-		params.groups = {snappy=2,choppy=2,oddly_breakable_by_hand=2,flammable=3}
-		params.sounds = default.node_sound_wood_defaults()
-		params.walkable = false
-		params.on_use = minetest.item_eat(option)
-	end
-	minetest.register_node("hydro:"..nodeid, params)
-end
-GLOWLIKE = function(nodeid,nodename,drawtype)
-	if drawtype == nil then 
-		drawtype = 'glasslike'
-		inv_image = minetest.inventorycube("hydro_"..nodeid..".png")
-	else 
-		inv_image = "hydro_"..nodeid..".png" 
-	end
-	minetest.register_node("hydro:"..nodeid, {
-		description = nodename,
-		drawtype = drawtype,
-		tile_images = {"hydro_"..nodeid..".png"},
-		inventory_image = inv_image,
-		light_propagates = true,
-		paramtype = "light",
-		sunlight_propagates = true,
-		light_source = 15	,
-		is_ground_content = true,
-		groups = {snappy=2,cracky=3,oddly_breakable_by_hand=3},
-		sounds = default.node_sound_glass_defaults(),
+minetest.register_node("hydro:coffeecup", {
+	description = 'Coffee Cup',
+	drawtype = "plantlike",
+	tile_images = {"hydro_coffeecup.png"},
+	inventory_image = "hydro_coffeecup.png",
+	wield_image = "hydro_coffeecup.png",
+	use_texture_alpha = true,
+	paramtype = "light",
+	groups = {snappy=2,choppy=2,oddly_breakable_by_hand=2,flammable=3},
+	sounds = default.node_sound_wood_defaults(),
+	walkable = false,
+	on_use = minetest.item_eat(2)
+})
+
+minetest.register_node("hydro:growlamp", {
+	description = "Growlamp",
+	drawtype = 'nodebox',
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{-1/16,	-7/16,	-1/16,	1/16,	8/16,	1/16},
+			{-2/16,	3/16,	-2/16,	2/16,	6/16,	2/16},
+			{-3/16,	-6/16,	-2/16,	3/16,	3/16,	2/16},
+			{-2/16,	-6/16,	-3/16,	2/16,	3/16,	3/16},
+		}
+	},
+	tile_images = {"hydro_growlamp_top.png", "hydro_growlamp_bottom.png", "hydro_growlamp_side.png"},
+	--inventory_image = "hydro_growlamp_side.png",
+	paramtype = "light",
+	light_propagates = true,
+	sunlight_propagates = true,
+	light_source = 15,
+	groups = {snappy=2,cracky=3,oddly_breakable_by_hand=3},
+	sounds = default.node_sound_glass_defaults(),
+	node_placement_prediction = "hydro:coffeecup",
+})
+
+minetest.on_place = minetest.on_place or function(name, func)
+	local previous_on_place = minetest.registered_nodes[name].on_place
+	minetest.override_item(name, {
+		on_place = function(itemstack, placer, pointed_thing)
+			if func(itemstack, placer, pointed_thing) then
+				return previous_on_place(itemstack, placer, pointed_thing)
+			end
+		end
 	})
 end
 
-PLANTLIKE('wine','Wine Bottle','eat',1)
-PLANTLIKE('coffeecup','Coffee Cup','eat',2)
-GLOWLIKE('growlamp','Growlamp','plantlike')
+minetest.on_place("hydro:growlamp", function(itemstack, placer, pointed_thing)
+	if not pointed_thing then
+		return
+	end
+	local pos = minetest.get_pointed_thing_position(pointed_thing, true)
+	if not pos then
+		return
+	end
+	local nd_above = minetest.get_node({x=pos.x, y=pos.y+1, z=pos.z}).name
+	local nd_above_info = minetest.registered_nodes[nd_above]
+	if nd_above == "air"
+	or nd_above == "hydro:growlamp"
+	or not nd_above_info.walkable
+	or nd_above_info.buildable_to then
+		return
+	end
+	return true
+end)
+
 minetest.register_node("hydro:promix", {
 	description = "Promix",
 	tile_images = {"hydro_promix.png"},
-	is_ground_content = true,
 	groups = {crumbly=3},
 	sounds = default.node_sound_dirt_defaults(),
 })
@@ -69,7 +99,6 @@ minetest.register_node("hydro:roastedcoffee", {
 	description = "Roasted Coffee",
 	tile_images = {"hydro_roastedcoffee.png"},
 	inventory_image = minetest.inventorycube("hydro_roastedcoffee.png"),
-	is_ground_content = true,
 	groups = {snappy=2,cracky=3,oddly_breakable_by_hand=3},
 	sounds = default.node_sound_stone_defaults(),
 })
@@ -83,20 +112,15 @@ minetest.register_node("hydro:rosebush", {
 	sounds = default.node_sound_leaves_defaults(),
 })
 
-get_plantname = {}		-- plants index by nodenames (tomato1, tomato2, seeds_tomato, etc..)
-get_plantbynumber = {}		-- plants index by number (for random select)
-get_wildplants = {}		-- wildplant nodenames (pop control)
+local get_plantname = {}		-- plants index by nodenames (tomato1, tomato2, seeds_tomato, etc..)
+local get_plantbynumber = {}		-- plants index by number (for random select)
+local get_wildplants = {}		-- wildplant nodenames (pop control)
 
-local is_specialharvest = function(plantname)
-	local result = 'hydro:'..plantname
-	if PLANTS[plantname].give_on_harvest ~= nil then result =  PLANTS[plantname].give_on_harvest end
-	return result
-end
-
-for index,plant in pairs(PLANTS) do 
+for _,plant in pairs(PLANTS) do 
 		--		define nodes
-	minetest.register_node("hydro:wild_"..plant.name, {
-		description = "Wild Plant",
+	local wild_plant = "hydro:wild_"..plant.name
+	minetest.register_node(wild_plant, {
+		description = "Wild "..plant.description.." Plant",
 		drawtype = "plantlike",
 		visual_scale = 1.0,
 		tile_images = {"hydro_wildplant.png"},
@@ -111,7 +135,7 @@ for index,plant in pairs(PLANTS) do
 		},
 	})
 	minetest.register_node("hydro:seeds_"..plant.name, {
-		description = plant.name.." Seeds",
+		description = plant.description.." Seeds",
 		drawtype = "signlike",
 		tile_images = {"hydro_seeds.png"},
 		inventory_image = "hydro_seeds.png",
@@ -158,7 +182,7 @@ for index,plant in pairs(PLANTS) do
 		drop = '',
 	})
 	minetest.register_node('hydro:'..plant.name..'1', {
-		description = 'Tomato Plant (Young)',
+		description = plant.description..' Plant (Young)',
 		drawtype = 'plantlike',
 		visual_scale = 1.0,
 		tile_images = { 'hydro_'..plant.name..'1.png' },
@@ -172,16 +196,8 @@ for index,plant in pairs(PLANTS) do
 		drop = '',
 	})
 
-	local after_dig_node = nil
-	if plant.growtype == 'permaculture' then
-		plant.growtype = 'growshort'
-		after_dig_node = function(pos,node)
-			minetest.env:add_node(pos,{type='node',name='hydro:'..plant.name..'1'})
-		end
-
-	end
 	minetest.register_node('hydro:'..plant.name..'2', {
-		description = 'Tomato Plant (Youngish)',
+		description = plant.description..' Plant (Youngish)',
 		drawtype = 'plantlike',
 		visual_scale = 1.0,
 		tile_images = { 'hydro_'..plant.name..'2.png' },
@@ -195,7 +211,7 @@ for index,plant in pairs(PLANTS) do
 		drop = '',
 	})
 	minetest.register_node('hydro:'..plant.name..'3', {
-		description = 'Tomato Plant (Fruitings)',
+		description = plant.description..' Plant (Fruitings)',
 		drawtype = 'plantlike',
 		visual_scale = 1.0,
 		tile_images = { 'hydro_'..plant.name..'3.png' },
@@ -211,10 +227,21 @@ for index,plant in pairs(PLANTS) do
 	
 
 	local harvest = 'hydro:'..plant.name
-	if plant.give_on_harvest then harvest = plant.give_on_harvest end
+	if plant.give_on_harvest then
+		harvest = plant.give_on_harvest
+	end
 	
+	local after_dig_node
+	if plant.growtype == 'permaculture' then
+		plant.growtype = 'growshort'
+		after_dig_node = function(pos)
+			minetest.add_node(pos, {name='hydro:'..plant.name..'1'})
+		end
+
+	end
+
 	minetest.register_node('hydro:'..plant.name..'4', {
-		description = 'Tomato Plant (Ripe)',
+		description = plant.description..' Plant (Ripe)',
 		drawtype = 'plantlike',
 		visual_scale = 1.0,
 		tile_images = { 'hydro_'..plant.name..'4.png' },
@@ -238,7 +265,7 @@ for index,plant in pairs(PLANTS) do
 		},
 
 	})
-	if plant.give_on_harvest == nil then
+	if not plant.give_on_harvest then
 		minetest.register_node("hydro:"..plant.name, {
 			description = plant.name,
 			drawtype = "plantlike",
@@ -253,7 +280,7 @@ for index,plant in pairs(PLANTS) do
 			sounds = default.node_sound_defaults(),
 		})
 	end
-	table.insert(get_wildplants, 'hydro:wild_'..plant.name)
+	table.insert(get_wildplants, wild_plant)
 	table.insert(get_plantbynumber, plant.name)
 	get_plantname["hydro:"..plant.name.."4"] = plant.name
 	get_plantname["hydro:"..plant.name.."3"] = plant.name
@@ -265,191 +292,134 @@ for index,plant in pairs(PLANTS) do
 end
 
 --		GROW (TALL) FUNCTION
-growtall = function (plantname, nodename, grnode)
-	if nodename == 'hydro:'..plantname..'3' 			then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."4"})	
-												minetest.env:add_node(grnode.grow2,{type="node",name="hydro:"..plantname.."4"})
-	elseif nodename == 'hydro:'..plantname..'2' 		then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."3"})
-												minetest.env:add_node(grnode.grow2,{type="node",name="hydro:"..plantname.."3"})
-	elseif nodename == 'hydro:'..plantname..'1' 		then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."2"})
-												minetest.env:add_node(grnode.grow2,{type="node",name="hydro:"..plantname.."2"})
-	elseif nodename =='hydro:sproutlings_'..plantname 	then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."1"})
-	elseif nodename == 'hydro:seedlings_'..plantname 	then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:sproutlings_"..plantname})
-	elseif nodename == 'hydro:seeds_'..plantname 		then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:seedlings_"..plantname})
+local function grow_plant(plantname, nodename, pos, tall)
+	local name, above
+	if nodename == 'hydro:'..plantname..'3' 			then
+		name = plantname.."4"
+		above = true
+	elseif nodename == 'hydro:'..plantname..'2' 		then
+		name = plantname.."3"
+		above = true
+	elseif nodename == 'hydro:'..plantname..'1' 		then
+		name = plantname.."2"
+		above = true
+	elseif nodename =='hydro:sproutlings_'..plantname 	then
+		name = plantname.."1"
+	elseif nodename == 'hydro:seedlings_'..plantname 	then
+		name = "sproutlings_"..plantname
+	elseif nodename == 'hydro:seeds_'..plantname 		then
+		name = "seedlings_"..plantname
+	else
+		return
 	end
-
-end
-
-growshort = function (plantname, nodename, grnode)
-	if nodename == 'hydro:'..plantname..'3' 			then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."4"})	
---												minetest.env:add_node(grnode.grow2,{type="node",name="hydro:"..plantname.."4"})
-	elseif nodename == 'hydro:'..plantname..'2' 		then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."3"})
---												minetest.env:add_node(grnode.grow2,{type="node",name="hydro:"..plantname.."3"})
-	elseif nodename == 'hydro:'..plantname..'1' 		then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."2"})
---												minetest.env:add_node(grnode.grow2,{type="node",name="hydro:"..plantname.."2"})
-	elseif nodename =='hydro:sproutlings_'..plantname 	then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:"..plantname.."1"})
-	elseif nodename == 'hydro:seedlings_'..plantname 	then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:sproutlings_"..plantname})
-	elseif nodename == 'hydro:seeds_'..plantname 		then	minetest.env:add_node(grnode.grow1,{type="node",name="hydro:seedlings_"..plantname})
+	minetest.add_node(pos, {name="hydro:"..name})
+	if above
+	and tall then
+		minetest.add_node({x=pos.x, y=pos.y+1, z=pos.z}, {name="hydro:"..name})
 	end
-
 end
 
 --		WILD PLANTS/SEEDS GENERATING
+local function get_random(pos, seed)
+	return PseudoRandom(math.abs(pos.x+pos.y*3+pos.z*5)+seed)
+end
+
 minetest.register_abm({
-		nodenames = { "default:dirt_with_grass" },
-		interval = 600,
-		chance = 80,
-		action = function(pos, node, active_object_count, active_object_count_wider)
-			local air = { x=pos.x, y=pos.y+1,z=pos.z }
-			local is_air = minetest.env:get_node_or_nil(air)
-			if is_air ~= nil and is_air.name == 'air' then
-				local count = table.getn(get_plantbynumber)
-				local random_plant = math.random(1,count)
-				local nodename = "hydro:wild_"..get_plantbynumber[random_plant]
-				if nodename ~= "hydro:wild_rubberplant" then minetest.env:add_node({x=pos.x,y=pos.y+1,z=pos.z},{type="node",name=nodename}) end
+	nodenames = { "default:dirt_with_grass" },
+	interval = 600,
+	chance = 80,
+	action = function(p, node)
+		local pr = get_random(p, 17)
+		if pr:next(1,20) ~= 1 then
+			return
+		end
+		p.y = p.y+1
+		local is_air = minetest.get_node_or_nil(p)
+		if is_air
+		and is_air.name == 'air' then
+			local count = table.getn(get_plantbynumber)
+			local random_plant = math.random(1, count)
+			local nodename = "hydro:wild_"..get_plantbynumber[random_plant]
+			if nodename ~= "hydro:wild_rubberplant" then
+				minetest.add_node(p, {name=nodename})
 			end
 		end
-})
-minetest.register_abm({
-		nodenames = get_wildplants,
-		interval = 600,
-		chance = 2,
-		action = function(pos, node, active_object_count, active_object_count_wider)
-			minetest.env:remove_node({x=pos.x,y=pos.y,z=pos.z})
-		end
+	end
 })
 
 
 --		GROWING
 minetest.register_abm({
-		nodenames = { "hydro:growlamp" },
-		interval = HYDRO_GROW_INTERVAL,
-		chance = 1,
-
-		action = function(pos, node, active_object_count, active_object_count_wider)
-			local grnode1 = {water = {x=pos.x,y=pos.y-5,z=pos.z}, mix = {x=pos.x,y=pos.y-4,z=pos.z},grow1 = {x=pos.x,y=pos.y-3,z=pos.z}, grow2 = {x=pos.x,y=pos.y-2,z=pos.z}}
-			local grnode2 = {water = {x=pos.x-1,y=pos.y-5,z=pos.z}, mix = {x=pos.x-1,y=pos.y-4,z=pos.z},grow1 = {x=pos.x-1, y=pos.y-3,z=pos.z}, grow2 = {x=pos.x-1,y=pos.y-2,z=pos.z}}
-			local grnode3 = {water = {x=pos.x+1,y=pos.y-5,z=pos.z}, mix = {x=pos.x+1,y=pos.y-4,z=pos.z},grow1 = {x=pos.x+1, y=pos.y-3,z=pos.z}, grow2 = {x=pos.x+1,y=pos.y-2,z=pos.z}}
-			local grnode4 = {water = {x=pos.x,y=pos.y-5,z=pos.z-1}, mix = {x=pos.x,y=pos.y-4,z=pos.z-1},grow1 = {x=pos.x, y=pos.y-3, z=pos.z-1}, grow2 = {x=pos.x,y=pos.y-2,z=pos.z-1}}
-			local grnode5 = {water = {x=pos.x,y=pos.y-5,z=pos.z+1}, mix = {x=pos.x,y=pos.y-4,z=pos.z+1},grow1 = {x=pos.x, y=pos.y-3, z=pos.z+1}, grow2 = {x=pos.x,y=pos.y-2,z=pos.z+1}}
-			local grnode6 = {water = {x=pos.x-1,y=pos.y-5,z=pos.z-1}, mix = {x=pos.x-1,y=pos.y-4,z=pos.z-1},grow1 = {x=pos.x-1,y=pos.y-3,z=pos.z-1}, grow2 = {x=pos.x-1,y=pos.y-2,z=pos.z-1}}
-			local grnode7 = {water = {x=pos.x-1,y=pos.y-5,z=pos.z+1}, mix = {x=pos.x-1,y=pos.y-4,z=pos.z+1},grow1 = {x=pos.x-1,y=pos.y-3,z=pos.z+1}, grow2 = {x=pos.x-1,y=pos.y-2,z=pos.z+1}}
-			local grnode8 = {water = {x=pos.x+1,y=pos.y-5,z=pos.z-1}, mix = {x=pos.x+1,y=pos.y-4,z=pos.z-1},grow1 = {x=pos.x+1,y=pos.y-3,z=pos.z-1}, grow2 = {x=pos.x+1,y=pos.y-2,z=pos.z-1}}
-			local grnode9 = {water = {x=pos.x+1,y=pos.y-5,z=pos.z+1}, mix = {x=pos.x+1,y=pos.y-4,z=pos.z+1},grow1 = {x=pos.x+1,y=pos.y-3,z=pos.z+1}, grow2 = {x=pos.x+1,y=pos.y-2,z=pos.z+1}}
-
-
-			local water1 = minetest.env:get_node(grnode1.water)
-			if water1.name == 'default:water_source' or water1.name == 'default:water_flowing' then water1 = true end
-			local ismix1 = minetest.env:get_node(grnode1.mix)
-			local water2 = minetest.env:get_node(grnode2.water)
-			if water2.name == 'default:water_source' or water2.name == 'default:water_flowing' then water2 = true end
-			local ismix2 = minetest.env:get_node(grnode2.mix)
-			local water3 = minetest.env:get_node(grnode3.water)
-			if water3.name == 'default:water_source' or water3.name == 'default:water_flowing' then water3 = true end
-			local ismix3 = minetest.env:get_node(grnode3.mix)
-			local water4 = minetest.env:get_node(grnode4.water)
-			if water4.name == 'default:water_source' or water4.name == 'default:water_flowing' then water4 = true end
-			local ismix4 = minetest.env:get_node(grnode4.mix)
-			local water5 = minetest.env:get_node(grnode5.water)
-			if water5.name == 'default:water_source' or water5.name == 'default:water_flowing' then water5 = true end
-			local ismix5 = minetest.env:get_node(grnode5.mix)
-			local water6 = minetest.env:get_node(grnode6.water)
-			if water6.name == 'default:water_source' or water6.name == 'default:water_flowing' then water6 = true end
-			local ismix6 = minetest.env:get_node(grnode6.mix)
-			local water7 = minetest.env:get_node(grnode7.water)
-			if water7.name == 'default:water_source' or water7.name == 'default:water_flowing' then water7 = true end
-			local ismix7 = minetest.env:get_node(grnode7.mix)
-			local water8 = minetest.env:get_node(grnode8.water)
-			if water8.name == 'default:water_source' or water8.name == 'default:water_flowing' then water8 = true end
-			local ismix8 = minetest.env:get_node(grnode8.mix)
-			local water9 = minetest.env:get_node(grnode9.water)
-			if water9.name == 'default:water_source' or water9.name == 'default:water_flowing' then water9 = true end
-			local ismix9 = minetest.env:get_node(grnode9.mix)
-
-
-			if water1 == true and ismix1.name == 'hydro:promix' then
-				local grow1 = minetest.env:get_node(grnode1.grow1)
-				local curplant = get_plantname[grow1.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow1.name,grnode1)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow1.name,grnode1) end	--	*** GENERIC GROW FUNCTION
-			end
-			if water2 == true and ismix2.name == 'hydro:promix' then
-				local grow2 = minetest.env:get_node(grnode2.grow1)
-				local curplant = get_plantname[grow2.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow2.name,grnode2)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow2.name,grnode2) end	--	*** GENERIC GROW FUNCTION
-			end
-			if water3 == true and ismix3.name == 'hydro:promix' then
-				local grow3 = minetest.env:get_node(grnode3.grow1)
-				local curplant = get_plantname[grow3.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow3.name,grnode3)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow3.name,grnode3) end	--	*** GENERIC GROW FUNCTION
-
-			end
-			if water4 == true and ismix4.name == 'hydro:promix' then
-				local grow4 = minetest.env:get_node(grnode4.grow1)
-				local curplant = get_plantname[grow4.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow4.name,grnode4)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow4.name,grnode4) end	--	*** GENERIC GROW FUNCTION
-
-			end
-			if water5 == true and ismix5.name == 'hydro:promix' then
-				local grow5 = minetest.env:get_node(grnode5.grow1)
-				local curplant = get_plantname[grow5.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow5.name,grnode5)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow5.name,grnode5) end	--	*** GENERIC GROW FUNCTION
-
-			end
-			if water6 == true and ismix6.name == 'hydro:promix' then
-				local grow6 = minetest.env:get_node(grnode6.grow1)
-				local curplant = get_plantname[grow6.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow6.name,grnode6)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow6.name,grnode6) end	--	*** GENERIC GROW FUNCTION
-
-			end
-			if water7 == true and ismix7.name == 'hydro:promix' then
-				local grow7 = minetest.env:get_node(grnode7.grow1)
-				local curplant = get_plantname[grow7.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow7.name,grnode7)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow7.name,grnode7) end	--	*** GENERIC GROW FUNCTION
-
-			end
-			if water8 == true and ismix8.name == 'hydro:promix' then
-				local grow8 = minetest.env:get_node(grnode8.grow1)
-				local curplant = get_plantname[grow8.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow8.name,grnode8)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow8.name,grnode8) end	--	*** GENERIC GROW FUNCTION
-
-			end
-			if water9 == true and ismix9.name == 'hydro:promix' then
-				local grow9 = minetest.env:get_node(grnode9.grow1)
-				local curplant = get_plantname[grow9.name]
-				if curplant ~= nil and PLANTS[curplant].growtype == 'growtall' then growtall(curplant,grow9.name,grnode9)			--	*** GENERIC GROW FUNCTION
-				elseif curplant ~= nil and PLANTS[curplant].growtype == 'growshort' then growshort(curplant,grow9.name,grnode9) end	--	*** GENERIC GROW FUNCTION
-
-			end
-
+	nodenames = { "hydro:growlamp" },
+	interval = HYDRO_GROW_INTERVAL,
+	chance = 1,
+	action = function(pos, node)
+		if minetest.get_node({x=pos.x, y=pos.y+1, z=pos.z}).name == "air"
+		or minetest.get_node({x=pos.x, y=pos.y-1, z=pos.z}).name ~= "air" then
+			return
 		end
+		for i = -1,1 do
+			for j = -1,1 do
+				local p = {x=pos.x+j, y=pos.y, z=pos.z+i}
+				local water = minetest.get_node({x=p.x, y=p.y-5, z=p.z}).name
+				if (water == 'default:water_source' or water == 'default:water_flowing')
+				and minetest.get_node({x=p.x, y=p.y-4, z=p.z}).name == 'hydro:promix' then
+					local grow = minetest.get_node({x=p.x, y=p.y-3, z=p.z}).name
+					local curplant = get_plantname[grow]
+					if curplant then
+						local growtype = PLANTS[curplant].growtype
+						local tall
+						if growtype == 'growtall' then
+							tall = true
+						end
+						grow_plant(curplant, grow, {x=p.x, y=p.y-3, z=p.z}, tall)
+					end
+				end
+			end
+		end
+	end
 })
 
-minetest.register_craft({	output = 'hydro:growlamp 1',	recipe = {
-		{'glass', 'torch','glass'},
-		{'glass', 'torch','glass'},
-		{'glass', 'torch','glass'},
-}})
-minetest.register_craft({	output = 'hydro:promix 6',	recipe = {
+
+--Crafting
+minetest.register_craft({
+	output = 'hydro:growlamp',
+	recipe = {
+		{'default:glass', 'default:torch','default:glass'},
+		{'default:glass', 'default:torch','default:glass'},
+		{'default:glass', 'default:torch','default:glass'},
+	}
+})
+
+minetest.register_craft({
+	output = 'hydro:promix 6',
+	recipe = {
 		{'', 'default:clay_lump',''},
 		{'default:dirt', 'default:dirt', 'default:dirt'},
 		{'default:dirt', 'default:dirt', 'default:dirt'},
-}})
-minetest.register_craft({	output = 'hydro:wine 1',	recipe = {
+	}
+})
+
+minetest.register_craft({
+	output = 'hydro:wine',
+	recipe = {
 		{'default:glass', 'hydro:grapes','default:glass'},
 		{'default:glass', 'hydro:grapes','default:glass'},
 		{'default:glass', 'hydro:grapes','default:glass'},
-	}})
-minetest.register_craft({	output = 'node "hydro:coffeecup" 1',	recipe = {
+	}
+})
+
+minetest.register_craft({
+	output = "hydro:coffeecup",
+	recipe = {
 		{'','',''},
 		{'default:clay_lump','hydro:roastedcoffee','default:clay_lump'},
 		{'','default:clay_lump',''},
-	}})
-minetest.register_craft({	type = "cooking",	output = "hydro:roastedcoffee",	recipe = "hydro:coffee", })
+	}
+})
 
+minetest.register_craft({
+	type = "cooking",
+	output = "hydro:roastedcoffee",
+	recipe = "hydro:coffee",
+})
