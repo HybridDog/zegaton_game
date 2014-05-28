@@ -1,53 +1,25 @@
+-- Load translation library if intllib is installed
+
+local S
+if (minetest.get_modpath("intllib")) then
+	dofile(minetest.get_modpath("intllib").."/intllib.lua")
+	S = intllib.Getter(minetest.get_current_modname())
+	else
+	S = function ( s ) return s end
+end
+
+dofile(minetest.get_modpath("moreores").."/_config.txt")
+
+print(S("[moreores] loaded."))
+
 --[[
 ****
 More Ores
 by Calinou
 with the help of MarkTraceur, GloopMaster and Kotolegokot
-Licensed under GPLv3 or later for code and zlib/libpng for textures, see: http://www.gnu.org/licenses/gpl-3.0.html
+Licensed under GPLv3+ for code and CC BY-SA for textures, see: http://www.gnu.org/licenses/gpl-3.0.html
 ****
 --]]
-
-------------------------------------------------------------------------------
------------------------------- CONFIGURATION ---------------------------------
-------------------------------------------------------------------------------
-
-------------------------------------------------------------------------------
--------- Feel free to change any settings (just change the numbers). ---------
-------------------------------------------------------------------------------
-
--- Chunk sizes for ore generation (bigger = ore deposits are more scattered around)
-moreores_copper_chunk_size = 12
-moreores_tin_chunk_size = 9
-moreores_silver_chunk_size = 11
-moreores_gold_chunk_size = 13
-moreores_mithril_chunk_size = 7
-
--- Amount of ore per chunk (higher = bigger ore deposits)
-moreores_copper_ore_per_chunk = 8
-moreores_tin_ore_per_chunk = 2
-moreores_silver_ore_per_chunk = 5
-moreores_gold_ore_per_chunk = 5
-moreores_mithril_ore_per_chunk = 1
-
--- Minimal depths of ore generation (Y coordinate)
-moreores_copper_min_depth = -31000
-moreores_tin_min_depth = -31000
-moreores_silver_min_depth = -31000
-moreores_gold_min_depth = -31000
-moreores_mithril_min_depth = -31000
-
--- Maximal depths of ore generation (Y coordinate)
-moreores_copper_max_depth = 64
-moreores_tin_max_depth = 8
-moreores_silver_max_depth = -2
-moreores_gold_max_depth = -64
-moreores_mithril_max_depth = -512
-
-
-------------------------------------------------------------------------------
-------------------------- END OF CONFIGURATION -------------------------------
-------------------------------------------------------------------------------
-
 
 -- Utility functions
 
@@ -80,7 +52,7 @@ end
 
 local function add_ore(modname, mineral_name, oredef)
     local firstlet = string.upper(string.sub(mineral_name, 1, 1))
-    local upcase_name = firstlet .. string.sub(mineral_name, 2)
+    local description = firstlet .. string.sub(mineral_name, 2)
     local img_base = modname .. "_" .. mineral_name
     local toolimg_base = modname .. "_tool_"..mineral_name
 	local tool_base = modname .. ":"
@@ -93,9 +65,8 @@ local function add_ore(modname, mineral_name, oredef)
 	if oredef.makes.ore then
 		local mineral_img_base = modname .. "_mineral_"..mineral_name
 		minetest.register_node(modname .. ":mineral_"..mineral_name, {
-			description = upcase_name .. " Ore",
+			description = S("%s Ore"):format(S(description)),
 			tiles = {"default_stone.png^"..mineral_img_base..".png"},
-			is_ground_content = true,
 			groups = {cracky=3},
 			sounds = default_stone_sounds,
 			drop = item_base .. "_lump 1"
@@ -105,9 +76,8 @@ local function add_ore(modname, mineral_name, oredef)
 	if oredef.makes.block then
 		local blockitem = item_base .. "_block"
 		minetest.register_node(blockitem, {
-			description = upcase_name .. " Block",
+			description = S("%s Block"):format(S(description)),
 			tiles = { img_base .. "_block.png" },
-			is_ground_content = true,
 			groups = {snappy=1,bendy=2,cracky=1,melty=2,level=2},
 			sounds = default_stone_sounds
 		})
@@ -128,7 +98,7 @@ local function add_ore(modname, mineral_name, oredef)
 
 	if oredef.makes.lump then
 		minetest.register_craftitem(lumpitem, {
-			description = upcase_name .. " Lump",
+			description = S("%s Lump"):format(S(description)),
 			inventory_image = img_base .. "_lump.png",
 			on_place_on_ground = minetest.craftitem_place_item
 		})
@@ -144,7 +114,7 @@ local function add_ore(modname, mineral_name, oredef)
 
 	if oredef.makes.ingot then
 		minetest.register_craftitem(ingot, {
-			description = upcase_name .. " Ingot",
+			description = S("%s Ingot"):format(S(description)),
 			inventory_image = img_base .. "_ingot.png",
 			on_place_on_ground = minetest.craftitem_place_item
 		})
@@ -172,9 +142,9 @@ local function add_ore(modname, mineral_name, oredef)
 
 	for toolname, tooldef in pairs(oredef.tools) do
 		local tflet = string.upper(string.sub(toolname, 0, 1))
-		local upcase_toolname = tflet..string.sub(toolname, 2)
+		local tool_description = tflet..string.sub(toolname, 2)
 		local tdef = {
-			description = upcase_name .. " " .. upcase_toolname,
+			description = "",
 			inventory_image = toolimg_base .. toolname .. ".png",
 			tool_capabilities = {
 				max_drop_level=3,
@@ -184,10 +154,19 @@ local function add_ore(modname, mineral_name, oredef)
 
 		if toolname == "sword" then
 			tdef.full_punch_interval = oredef.punchint
+			tdef.description = S("%s Sword"):format(S(description))
 		end
 
 		if toolname == "pick" then
-			tdef.description = upcase_name .. " Pickaxe"
+			tdef.description = S("%s Pickaxe"):format(S(description))
+		end
+		
+		if toolname == "axe" then
+			tdef.description = S("%s Axe"):format(S(description))
+		end
+
+		if toolname == "shovel" then
+			tdef.description = S("%s Shovel"):format(S(description))
 		end
 
 		local fulltoolname = tool_base .. toolname .. tool_post
@@ -207,27 +186,6 @@ end
 local modname = "moreores"
 
 local oredefs = {
-	gold = {
-		makes = {ore=true, block=true, lump=true, ingot=true, chest=true},
-		tools = {
-			pick = {
-				cracky={times={[1]=2.00, [2]=0.50, [3]=0.30}, uses=70, maxlevel=1}
-			},
-			shovel = {
-				crumbly={times={[1]=0.60, [2]=0.25, [3]=0.15}, uses=70, maxlevel=1}
-			},
-			axe = {
-				choppy={times={[1]=1.70, [2]=0.40, [3]=0.35}, uses=70, maxlevel=1},
-				fleshy={times={[2]=0.90, [3]=0.30}, uses=70, maxlevel=1}
-			},
-			sword = {
-				fleshy={times={[2]=0.60, [3]=0.20}, uses=70, maxlevel=1},
-				snappy={times={[2]=0.60, [3]=0.20}, uses=70, maxlevel=1},
-				choppy={times={[3]=0.65}, uses=70, maxlevel=0}
-			}
-		},
-		punchint = 0.85
-	},
 	silver = {
 		makes = {ore=true, block=true, lump=true, ingot=true, chest=true},
 		tools = {
@@ -249,34 +207,9 @@ local oredefs = {
 		},
 		punchint = 1.0
 	},
-	copper = {
-		makes = {ore=true, block=false, lump=true, ingot=true, chest=false},
-		tools = {}
-	},
 	tin = {
-		makes = {ore=true, block=false, lump=true, ingot=true, chest=false},
+		makes = {ore=true, block=true, lump=true, ingot=true, chest=false},
 		tools = {}
-	},
-	bronze = {
-		makes = {ore=false, block=true, lump=false, ingot=true, chest=true},
-		tools = {
-			pick = {
-				cracky={times={[1]=3.00, [2]=1.20, [3]=0.80}, uses=160, maxlevel=1}
-			},
-			shovel = {
-				crumbly={times={[1]=1.50, [2]=0.50, [3]=0.30}, uses=160, maxlevel=1}
-			},
-			axe = {
-				choppy={times={[1]=3.00, [2]=1.00, [3]=0.60}, uses=160, maxlevel=1},
-				fleshy={times={[2]=1.30, [3]=0.70}, uses=160, maxlevel=1}
-			},
-			sword = {
-				fleshy={times={[2]=0.80, [3]=0.40}, uses=160, maxlevel=1},
-				snappy={times={[2]=0.80, [3]=0.40}, uses=160, maxlevel=1},
-				choppy={times={[3]=0.90}, uses=160, maxlevel=0}
-			}
-		},
-		punchint = 1.0
 	},
 	mithril = {
 		makes = {ore=true, block=true, lump=true, ingot=true, chest=false},
@@ -305,7 +238,7 @@ for orename,def in pairs(oredefs) do
 	add_ore(modname, orename, def)
 end
 
--- Copper rail (special item)
+-- Copper rail (special node)
 
 minetest.register_craft({
 	output = "moreores:copper_rail 16",
@@ -316,7 +249,7 @@ minetest.register_craft({
 	}
 })
 
--- Bronze has some special cases (because it"s made from copper + tin)
+-- Bronze has some special cases, because it is made from copper and tin
 
 minetest.register_craft( {
 	type = "shapeless",
@@ -328,25 +261,34 @@ minetest.register_craft( {
 	}
 })
 
--- Unique items
+-- Unique node
 
 minetest.register_node("moreores:copper_rail", {
-	description = "Copper Rail",
+	description = S("Copper Rail"),
 	drawtype = "raillike",
-	tile_images = {"moreores_copper_rail.png", "moreores_copper_rail_curved.png", "moreores_copper_rail_t_junction.png", "moreores_copper_rail_crossing.png"},
+	tiles = {"moreores_copper_rail.png", "moreores_copper_rail_curved.png", "moreores_copper_rail_t_junction.png", "moreores_copper_rail_crossing.png"},
 	inventory_image = "moreores_copper_rail.png",
 	wield_image = "moreores_copper_rail.png",
 	paramtype = "light",
-	is_ground_content = true,
+	sunlight_propagates = true,
 	walkable = false,
 	selection_box = {
 		type = "fixed",
 		fixed = {-1/2, -1/2, -1/2, 1/2, -1/2+1/16, 1/2},
 	},
-	groups = {bendy=2,snappy=1,dig_immediate=2}
-})
+	groups = {bendy=2,snappy=1,dig_immediate=2,rail=1,connect_to_raillike=1},
+	mesecons = {
+		effector = {
+			action_on = function(pos, node)
+				minetest.env:get_meta(pos):set_string("cart_acceleration", "0.5")
+			end,
 
--- Ore generation
+			action_off = function(pos, node)
+				minetest.env:get_meta(pos):set_string("cart_acceleration", "0")
+			end,
+		},
+	},
+})
 
 local function generate_ore(name, wherein, minp, maxp, seed, chunks_per_volume, ore_per_chunk, height_min, height_max)
 	if maxp.y < height_min or minp.y > height_max then
@@ -390,25 +332,33 @@ local function generate_ore(name, wherein, minp, maxp, seed, chunks_per_volume, 
 	-- print(generate_ore done)
 end
 
-minetest.register_on_generated(function(minp, maxp, seed)
-	math.randomseed(os.time())
-	local current_seed = seed + math.random(10, 100)
-	local function get_next_seed()
-		current_seed = current_seed + 1
-		return current_seed
-	end
-	generate_ore("moreores:mineral_copper", "default:stone", minp, maxp, get_next_seed(),
-	1/moreores_copper_chunk_size/moreores_copper_chunk_size/moreores_copper_chunk_size, moreores_copper_ore_per_chunk, moreores_copper_min_depth, moreores_copper_max_depth)
-	
-	generate_ore("moreores:mineral_tin", "default:stone", minp, maxp, get_next_seed(),
-	1/moreores_tin_chunk_size/moreores_tin_chunk_size/moreores_tin_chunk_size, moreores_tin_ore_per_chunk, moreores_tin_min_depth, moreores_tin_max_depth)
-	
-	generate_ore("moreores:mineral_silver", "default:stone", minp, maxp, get_next_seed(),
-	1/moreores_silver_chunk_size/moreores_silver_chunk_size/moreores_silver_chunk_size, moreores_silver_ore_per_chunk, moreores_silver_min_depth, moreores_silver_max_depth)
-	
-	generate_ore("moreores:mineral_gold", "default:stone", minp, maxp, get_next_seed(),
-	1/moreores_gold_chunk_size/moreores_gold_chunk_size/moreores_gold_chunk_size, moreores_gold_ore_per_chunk, moreores_gold_min_depth, moreores_gold_max_depth)
-	
-	generate_ore("moreores:mineral_mithril", "default:stone", minp, maxp, get_next_seed(),
-	1/moreores_mithril_chunk_size/moreores_mithril_chunk_size/moreores_mithril_chunk_size, moreores_mithril_ore_per_chunk, moreores_mithril_min_depth, moreores_mithril_max_depth)
-end)
+	minetest.register_ore({
+		ore_type       = "scatter",
+		ore            = "moreores:mineral_tin",
+		wherein        = "default:stone",
+		clust_scarcity = moreores_tin_chunk_size * moreores_tin_chunk_size * moreores_tin_chunk_size,
+		clust_num_ores = moreores_tin_ore_per_chunk,
+		clust_size     = moreores_tin_chunk_size,
+		height_min     = moreores_tin_min_depth,
+		height_max     = moreores_tin_max_depth
+	})
+	minetest.register_ore({
+		ore_type       = "scatter",
+		ore            = "moreores:mineral_silver",
+		wherein        = "default:stone",
+		clust_scarcity = moreores_silver_chunk_size * moreores_silver_chunk_size * moreores_silver_chunk_size,
+		clust_num_ores = moreores_silver_ore_per_chunk,
+		clust_size     = moreores_silver_chunk_size,
+		height_min     = moreores_silver_min_depth,
+		height_max     = moreores_silver_max_depth
+	})
+	minetest.register_ore({
+		ore_type       = "scatter",
+		ore            = "moreores:mineral_mithril",
+		wherein        = "default:stone",
+		clust_scarcity = moreores_mithril_chunk_size * moreores_mithril_chunk_size * moreores_mithril_chunk_size,
+		clust_num_ores = moreores_mithril_ore_per_chunk,
+		clust_size     = moreores_mithril_chunk_size,
+		height_min     = moreores_mithril_min_depth,
+		height_max     = moreores_mithril_max_depth
+	})
