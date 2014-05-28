@@ -1,0 +1,25 @@
+-- Note, this stuff here does not work, tested using Windows 0.4.4-win32.
+
+stairs.register_stair_and_slab("redpres", "xmas:present_r",
+		{dig_immediate=3},
+		{"xmas_red_pres_top.png", "xmas_red_pres_top.png", "xmas_red_pres_side.png"},
+		"Odd Shaped Red Present",
+		"Half Red Present")
+
+stairs.register_stair_and_slab("blupres", "xmas:present_b",
+		{dig_immediate=3},
+		{"xmas_blue_pres_top.png", "xmas_blue_pres_top.png", "xmas_blue_pres_side.png"},
+		"Odd Shaped Blue Present",
+		"Half Blue Present")
+
+stairs.register_stair_and_slab("grepres", "xmas:present_g",
+		{dig_immediate=3},
+		{"xmas_gree_pres_top.png", "xmas_gree_pres_top.png", "xmas_gree_pres_side.png"},
+		"Odd Shaped Green Present",
+		"Half Green Present")
+
+stairs.register_stair_and_slab("yelpres", "xmas:present_y",
+		{dig_immediate=3},
+		{"xmas_yel_pres_top.png", "xmas_yell_pres_top.png", "xmas_yel_pres_side.png"},
+		"Odd Shaped Yellow Present",
+		"Half Yellow Present")
