@@ -38,3 +38,12 @@
 [submodule "mods/vines"]
 	path = mods/vines
 	url =  https://github.com/HybridDog/vines/
+[submodule "mods/boats"]
+	path = mods/boats
+	url =  https://github.com/PilzAdam/boats
+[submodule "mods/carts"]
+	path = mods/carts
+	url =  https://github.com/PilzAdam/carts
+[submodule "mods/technic"]
+	path = mods/technic
+	url =  https://github.com/minetest-technic/technic
