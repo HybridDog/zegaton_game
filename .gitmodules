@@ -47,3 +47,9 @@
 [submodule "mods/technic"]
 	path = mods/technic
 	url =  https://github.com/minetest-technic/technic
+[submodule "mods/rulesaccept"]
+	path = mods/rulesaccept
+	url = https://github.com/HybridDog/rulesaccept
+[submodule "mods/stay_inside"]
+	path = mods/stay_inside
+	url = https://github.com/HybridDog/stay_inside
