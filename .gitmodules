@@ -35,3 +35,6 @@
 [submodule "mods/pipeworks"]
 	path = mods/pipeworks
 	url = https://github.com/VanessaE/pipeworks/
+[submodule "mods/vines"]
+	path = mods/vines
+	url =  https://github.com/HybridDog/vines/
