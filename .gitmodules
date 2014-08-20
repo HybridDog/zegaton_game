@@ -1,0 +1,3 @@
+[submodule "mods/conifers"]
+	path = mods/conifers
+	url = https://github.com/HybridDog/conifers
