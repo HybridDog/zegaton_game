@@ -4,3 +4,16 @@
 [submodule "mods/Minetest-WorldEdit"]
 	path = mods/Minetest-WorldEdit
 	url = https://github.com/Uberi/Minetest-WorldEdit
+[submodule "mods/desert_uses"]
+	path = mods/desert_uses
+	url = https://github.com/Menche/desert_uses
+[submodule "mods/farming_plus"]
+	path = mods/farming_plus
+	url = https://github.com/Zeg9/farming_plus
+	branch = mapgen
+[submodule "mods/hydro"]
+	path = mods/hydro
+	url = https://github.com/HybridDog/hydro
+[submodule "mods/locks"]
+	path = mods/locks
+	url = https://github.com/Sokomine/locks
