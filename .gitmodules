@@ -1,3 +1,6 @@
 [submodule "mods/conifers"]
 	path = mods/conifers
 	url = https://github.com/HybridDog/conifers
+[submodule "mods/Minetest-WorldEdit"]
+	path = mods/Minetest-WorldEdit
+	url = https://github.com/Uberi/Minetest-WorldEdit
