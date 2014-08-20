@@ -17,3 +17,21 @@
 [submodule "mods/locks"]
 	path = mods/locks
 	url = https://github.com/Sokomine/locks
+[submodule "mods/minetest-craft_guide"]
+	path = mods/minetest-craft_guide
+	url = https://github.com/cornernote/minetest-craft_guide
+[submodule "mods/minetest-exchange"]
+	path = mods/minetest-exchange
+	url = https://github.com/Zeg9/minetest-exchange/
+[submodule "mods/minetest_glow"]
+	path = mods/minetest_glow
+	url = https://github.com/HybridDog/minetest-glow
+[submodule "mods/minetest-mod-jumping"]
+	path = mods/minetest-mod-jumping
+	url = https://github.com/Jeija/minetest-mod-jumping
+[submodule "mods/minetest-mod-mesecons"]
+	path = mods/minetest-mod-mesecons
+	url = https://github.com/Jeija/minetest-mod-mesecons
+[submodule "mods/pipeworks"]
+	path = mods/pipeworks
+	url = https://github.com/VanessaE/pipeworks/
