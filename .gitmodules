@@ -19,7 +19,7 @@
 	url = https://github.com/Sokomine/locks
 [submodule "mods/minetest-craft_guide"]
 	path = mods/minetest-craft_guide
-	url = https://github.com/AndrejIT/minetest-craft_guide
+	url = https://github.com/HybridDog/minetest-craft_guide
 [submodule "mods/minetest-exchange"]
 	path = mods/minetest-exchange
 	url = https://github.com/Zeg9/minetest-exchange/
